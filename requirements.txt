@@ -1,0 +1,16 @@
+langchain
+langchain_community
+pypdf
+langchain-huggingface
+langgraph
+beautifulsoup4
+streamlit
+PyPDF2
+pdfplumber
+tiktoken
+scrapegraphai
+chromadb
+langchain_groq
+markdownify
+langchain_experimental
+
