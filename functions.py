@@ -28,8 +28,7 @@ else:
 
 
 def get_model():
-  # GROQ_API_KEY="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"
-  GROQ_API_KEY = "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"
+  GROQ_API_KEY="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"
 
   os.environ["GROQ_API_KEY"] = GROQ_API_KEY
   llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0)
@@ -41,7 +40,7 @@ def load_chroma_db():
 
     embedding_function = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-    CHROMA_DB_PATH = "/content/drive/MyDrive/CC2-LLM/CHROMA_db"
+    CHROMA_DB_PATH = "/content/drive/MyDrive/LLM/CC2-LLM/chroma_combined_multi"
     # Vérifiez si le dossier Chroma existe
     if not os.path.exists(CHROMA_DB_PATH):
         print(f"Le dossier '{CHROMA_DB_PATH}' n'existe pas.")
@@ -63,7 +62,7 @@ def load_chroma_db():
 def load_db_certif():
 
   embedding_function = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-  CHROMA_certif_PATH = "/content/drive/MyDrive/CC2-LLM/chroma_certif"
+  CHROMA_certif_PATH = "/content/drive/MyDrive/LLM/CC2-LLM/chroma_certif"
   # Vérifiez si le dossier Chroma existe
   if not os.path.exists(CHROMA_certif_PATH):
       print(f"Le dossier '{CHROMA_certif_PATH}' n'existe pas.")
@@ -92,7 +91,7 @@ def get_ue_context(user_question: str):
   Quelles sont les blocs de cette formation ?
   """
   db = load_chroma_db()
-  retriever = db.as_retriever(search_kwargs={"k": 3})
+  retriever = db.as_retriever()
   relevent_docs = retriever.invoke(question_etendue)
   contexte_formation = " ".join(doc.page_content for doc in relevent_docs)
 
@@ -108,6 +107,7 @@ def get_certif_context(user_question: str, contexte_formation: str):
   Recherchez les certificats qui couvrent les compétences enseignées dans ces UEs et expliquez pourquoi chaque certificat est pertinent.
   """
   certificats_db = load_db_certif()
+  print("---------------------------------------------------------certificats_db", certificats_db._collection.count() )
   certificats_retriever = certificats_db.as_retriever()
   certificats_recommandes = certificats_retriever.invoke(question_certificats)
 
@@ -134,7 +134,7 @@ def generate_answer(question: str) -> str:
 
   # Charger la base de données Chroma
   db = load_chroma_db()
-  retriever = db.as_retriever(search_kwargs={"k": 3})
+  retriever = db.as_retriever()
   relevent_docs = retriever.invoke(question)
   print("################## QnA Relevent Docs##################")
   print(relevent_docs)
@@ -159,7 +159,7 @@ def generate_cover_letter(user_question: str):
   template = get_cv_template()
 
   db = load_chroma_db()
-  retriever = db.as_retriever(search_kwargs={"k": 3})
+  retriever = db.as_retriever()
 
   user_context = retriever.invoke(user_question)
 
@@ -177,9 +177,9 @@ def generate_cover_letter(user_question: str):
 
   question_link = "Quel est le lien vers le site web de cette formation ?"
 
-  question_scol = "Quelle est l'adresse physique du département de cette formation ? Et l'adresse mail de la scolarité ?"
+  question_scol = "Quelle est l'adresse physique du département de cette formation ? Quelle est l'adresse mail de la scolarité ?"
 
-  relevant_docs = retriever.invoke(user_question + program.content + prompt_prog + question_resp + question_link + question_scol )
+  relevant_docs = retriever.invoke(user_question + program.content + prompt_prog + question_resp + question_link + question_scol)
 
   prompt = ChatPromptTemplate.from_template(template)
   prompt_with_context = prompt.format(context=relevant_docs, question=user_question)
@@ -198,8 +198,12 @@ def certif_recommendation(user_question):
   template = get_recommendation_template()
 
   context_ue = get_ue_context(user_question)
+  print("-----------------------------------------------------------")
+  print(context_ue)
 
   context_certif = get_certif_context(user_question, context_ue)
+  print("-----------------------------------------------------------")
+  print(context_certif)
 
   prompt = ChatPromptTemplate.from_template(template)
   prompt_with_context = prompt.format(context_formation=context_ue, context_certificats= context_certif, question=user_question)

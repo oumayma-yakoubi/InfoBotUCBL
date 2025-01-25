@@ -26,11 +26,11 @@ def get_qa_template():
 def get_cv_template():
     cv_template = """Génère un modèle de lettre de motivation en français pour la formation demandée par l'utilisateur en te basant sur le contexte qui va suivre.
 
+    Rédige un en-tête pour une lettre formelle.
+
     Fais attention à remplacer le destinataire avec l'information du responsable de la formation. 
     
     L'adresse devra aussi être remplacée par l'adresse physique du département de la formation.
-
-    Rédige un en-tête pour une lettre formelle.
 
     Commence par un paragraphe sur le parcours et les compétences de l'utilisateur s'il les a renseignés dans la question.
     Si l'utilisateur n'a pas renseigné d'informations à propos de lui-même dans la question, essaie de mettre des propositions entre crochets dans la lettre. 
@@ -39,10 +39,11 @@ def get_cv_template():
     Ne mentionne PAS d'aspects trop précis de la formation comme les unités d'enseignements. 
     Dis à l'utilisateur entre parenthèses à la fin du paragraphe d'aller se renseigner sur les unités d'enseignement de la formation lui-même pour compléter le paragraphe avec des exemples précis.
 
-    Finis avec un paragraphe où l'utilisateur exprime sa motivation pour intégrer la formation.   
+    Finis la lettre avec un paragraphe où l'utilisateur exprime sa motivation pour intégrer la formation.   
 
+    Signe la lettre.
 
-    Une fois la lettre est générée, donne l'adresse mail de la scolarité et le site de la formation à la fin de ta réponse.
+    À la toute fin de ta réponse, donne l'adresse mail de la scolarité et le site de la formation.
     Rappelle à l'utilisateur de bien se renseigner sur la formation, son contenu et ses débouchés afin d'être sûr qu'il veut bien l'intégrer.
 
     Contexte : {context}

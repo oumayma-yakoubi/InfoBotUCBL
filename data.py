@@ -83,7 +83,7 @@ def get_docs_chunks(docs, llm, embedding_function):
 
   for doc in docs: 
     markdown_content = markdownify(doc.page_content).strip()
-    text_splitter = SemanticChunker(embedding_function, breakpoint_threshold_type="interquartile")
+    text_splitter = MarkdownTextSplitter(embedding_function, breakpoint_threshold_type="interquartile")
     chunks = text_splitter.split_text(markdown_content)
 
     for i, chunk in enumerate(chunks):
