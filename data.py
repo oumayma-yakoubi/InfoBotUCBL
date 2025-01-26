@@ -119,19 +119,19 @@ def save_to_chroma(llm, embedding_function):
     all_docs_chunks = get_docs_chunks(all_docs, llm)
 
     # Define the path for saving the Chroma vector store for all websites
-    CHROMA_DB_PATH = "/content/drive/MyDrive/LLM-project-piste-2/final-v1/chroma_db"
+    CHROMA_DB_PATH = "chroma_combined_multi"
     
     # Create and persist the Chroma vector store for all documents using the provided embedding function
     db_all = Chroma.from_documents(all_docs_chunks, embedding_function, persist_directory=CHROMA_DB_PATH)
   
     # Define the path for certification Vector Store
-    CHROMA_CERTIF_PATH = "/content/drive/MyDrive/LLM-project-piste-2/final-v1/chroma_certif"
+    CHROMA_CERTIF_PATH = "chroma_certif"
     db_certif = Chroma.from_documents(certif_docs, embedding_function, persist_directory=CHROMA_CERTIF_PATH)
   
 
 def main():
 
-    GROQ_API_KEY="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"
+    GROQ_API_KEY=""
 
     os.environ["GROQ_API_KEY"] = GROQ_API_KEY
 

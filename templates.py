@@ -1,4 +1,5 @@
 def get_qa_template():
+  
   qa_template = """
     Réponds à la question en te basant uniquement sur le contexte fourni. Si aucun contexte n'est fourni, réponds d'une manière naturelle.
 
@@ -24,6 +25,7 @@ def get_qa_template():
   return qa_template
 
 def get_cv_template():
+    
     cv_template = """Génère un modèle de lettre de motivation en français pour la formation demandée par l'utilisateur en te basant sur le contexte qui va suivre.
 
     Rédige un en-tête pour une lettre formelle.
@@ -54,18 +56,6 @@ def get_cv_template():
     return cv_template
 
 def get_recommendation_template():
-
-  # certif_template = """
-  #   Contexte des UEs extraites : {context_formation}
-  #   Contexte des certificats recommandés : {context_certificats}
-  #   Question : {question}
-
-  #   Utilise les informations ci-dessus pour fournir une recommandation détaillée de certificats à l'utilisateur. Explique clairement :
-  #   - Le nom du certificat
-  #   - Les compétences acquises
-  #   - Une justification de la correspondance entre les UEs et les certificats recommandés.
-
-  #   """
 
   certif_template = """
     Contexte des UEs suivies dans la formation : {context_formation}

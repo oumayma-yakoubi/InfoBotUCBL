@@ -1,79 +1,73 @@
 import os
-import re
-from bs4 import BeautifulSoup, SoupStrainer
-from langchain_community.document_loaders import WebBaseLoader, RecursiveUrlLoader
-from langchain.text_splitter import MarkdownTextSplitter
-from langchain.docstore.document import Document
 from langchain_community.vectorstores import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_huggingface import HuggingFaceEmbeddings
 from templates import get_qa_template, get_cv_template, get_recommendation_template
 from langchain.agents import tool
-from typing import List
 from langchain_core.messages import HumanMessage, ToolMessage
-from typing import List
 from langchain_groq import ChatGroq
+from typing import List
 
 
 
-# Vérifier si USER_AGENT existe
+# Check if USER_AGENT exists in environment variables
 user_agent = os.environ.get("USER_AGENT")
 
 if user_agent:
     print(f"USER_AGENT existe déjà : {user_agent}")
 else:
-    # Définir USER_AGENT s'il n'existe pas
+    # If USER_AGENT doesn't exist, set it with a default value
     os.environ["USER_AGENT"] = "MyApp"
     print("USER_AGENT n'existait pas. Il a été créé avec la valeur : MyApp")
 
 
 def get_model():
-  GROQ_API_KEY="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"
+  GROQ_API_KEY=""
 
   os.environ["GROQ_API_KEY"] = GROQ_API_KEY
   llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0)
   return llm
 
 
-# Charger la base Chroma existante
+# Load the existing Chroma database
 def load_chroma_db():
 
+    # Define the embedding function 
     embedding_function = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-    CHROMA_DB_PATH = "/content/drive/MyDrive/LLM/CC2-LLM/chroma_combined_multi"
-    # Vérifiez si le dossier Chroma existe
+    CHROMA_DB_PATH = "chroma_combined_multi"
+    # Check if the Chroma directory exists
     if not os.path.exists(CHROMA_DB_PATH):
         print(f"Le dossier '{CHROMA_DB_PATH}' n'existe pas.")
         return None
     else:
         print(f"Le dossier '{CHROMA_DB_PATH}' a été trouvé.")
 
-    # Charger la base de données Chroma
+    # Load the Chroma database using the given path and embedding function
     db_all = Chroma(persist_directory=CHROMA_DB_PATH, embedding_function=embedding_function)
 
-    # Vérifiez si la base contient des documents
+    # Check if the database contains any documents
     if db_all._collection.count() == 0:
         print("Le dossier Chroma est vide, aucun document trouvé.")
     else:
         print(f"Le dossier Chroma contient {db_all._collection.count()} documents.")
     
+    # Return the loaded Chroma database
     return db_all
 
 def load_db_certif():
 
   embedding_function = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
-  CHROMA_certif_PATH = "/content/drive/MyDrive/LLM/CC2-LLM/chroma_certif"
-  # Vérifiez si le dossier Chroma existe
+  CHROMA_certif_PATH = "chroma_certif"
+
   if not os.path.exists(CHROMA_certif_PATH):
       print(f"Le dossier '{CHROMA_certif_PATH}' n'existe pas.")
       return None
   else:
       print(f"Le dossier '{CHROMA_certif_PATH}' a été trouvé.")
 
-  # Charger la base de données Chroma
   db_certif = Chroma(persist_directory=CHROMA_certif_PATH, embedding_function=embedding_function)
 
-  # Vérifiez si la base contient des documents
   if db_certif._collection.count() == 0:
       print("Le dossier Chroma est vide, aucun document trouvé.")
   else:
@@ -84,7 +78,7 @@ def load_db_certif():
 
 def get_ue_context(user_question: str):
 
-  # Étendre la question utilisateur avec des sous-questions
+  # Extend the user question with additional sub-questions to get relevant context
   question_etendue = f"""
   {user_question}.
   Quelles sont les Unités d'Enseignement (UE) de cette formation ?
@@ -92,13 +86,15 @@ def get_ue_context(user_question: str):
   """
   db = load_chroma_db()
   retriever = db.as_retriever()
+  
+  # Invoke the retriever with the extended question to fetch relevant documents
   relevent_docs = retriever.invoke(question_etendue)
   contexte_formation = " ".join(doc.page_content for doc in relevent_docs)
-
+  
+  # Return the aggregated context (formation details) found in the relevant documents
   return contexte_formation
 
-def get_certif_context(user_question: str, contexte_formation: str):
-  # contexte_formation = get_ue_context(user_question)
+def get_certif_context(contexte_formation: str):
 
   question_certificats = f"""
   En vous basant sur les Unités d'Enseignement (UE) suivantes :
@@ -107,21 +103,19 @@ def get_certif_context(user_question: str, contexte_formation: str):
   Recherchez les certificats qui couvrent les compétences enseignées dans ces UEs et expliquez pourquoi chaque certificat est pertinent.
   """
   certificats_db = load_db_certif()
-  print("---------------------------------------------------------certificats_db", certificats_db._collection.count() )
   certificats_retriever = certificats_db.as_retriever()
   certificats_recommandes = certificats_retriever.invoke(question_certificats)
 
-  # certificats_recommandes = certificats_retriever.invoke(contexte_formation)
   if not certificats_recommandes:
         return "Je n'ai trouvé aucun certificat pertinent pour cette formation."
 
-  # Joindre les textes des certificats recommandés en une seule chaîne de caractères
   contexte_certificats = " ".join(doc.page_content for doc in certificats_recommandes)
 
   return contexte_certificats
 
-
-#############Tools#################################
+####################################
+################Tools###############
+####################################
 @tool
 def generate_answer(question: str) -> str:
 
@@ -130,19 +124,19 @@ def generate_answer(question: str) -> str:
     Args:
         question: The user's question to be answered.
     """
+  # Get the QA template for generating the response
   template = get_qa_template()
 
-  # Charger la base de données Chroma
+  # Load the Chroma database for retrieving relevant documents
   db = load_chroma_db()
   retriever = db.as_retriever()
+  
+  # Invoke the retriever to search for relevant documents based on the user's question
   relevent_docs = retriever.invoke(question)
-  print("################## QnA Relevent Docs##################")
-  print(relevent_docs)
-  print("################################################")
 
   prompt = ChatPromptTemplate.from_template(template)
   prompt_with_context = prompt.format(context=relevent_docs, question=question)
-  # print(prompt_with_context)
+
   llm = get_model()
   response = llm.invoke(prompt_with_context)
   
@@ -198,12 +192,8 @@ def certif_recommendation(user_question):
   template = get_recommendation_template()
 
   context_ue = get_ue_context(user_question)
-  print("-----------------------------------------------------------")
-  print(context_ue)
 
   context_certif = get_certif_context(user_question, context_ue)
-  print("-----------------------------------------------------------")
-  print(context_certif)
 
   prompt = ChatPromptTemplate.from_template(template)
   prompt_with_context = prompt.format(context_formation=context_ue, context_certificats= context_certif, question=user_question)
@@ -236,17 +226,12 @@ def handle_query(query  : str, llm, tools: List):
   
   # Invoke the LLM with the conversation messages and capture the intial response (Tool to use)
   ai_msg = llm_with_tools.invoke(messages)
-  # print("**********************This is ai msg", ai_msg)
-
 
   # Append the AI's initial response to the human message
   messages.append(ai_msg)
-  # print("**********************messages", messages)
 
   # Process tool
   for tool_call in ai_msg.tool_calls:
-    # print("***************************** tool call", tool_call )
-    # print("***************************** tool_call[name]", tool_call["name"] )
 
     # Match tool name to its corresponding function
     selected_tool = {
@@ -256,20 +241,12 @@ def handle_query(query  : str, llm, tools: List):
 
     }.get(tool_call["name"].lower())
     
-    # print("***************************** selected_tool", selected_tool )
-
     # If the tool exists, invoke it with the provided arguments
     tool_output = selected_tool.invoke(tool_call["args"])
 
-    # print("***************************** tool_output", tool_output )
-    # print("**********************************************")
-
     messages.append(ToolMessage(tool_output, tool_call_id=tool_call["id"]))
-    print("***************************** messages", messages )
-    print("**********************************************")
-
+    
    # Get the final response after processing tool outputs
     final_response = tool_output.content
-    print("This issssssss the final response!!", final_response)
     return final_response
     
