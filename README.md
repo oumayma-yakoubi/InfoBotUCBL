@@ -83,6 +83,6 @@ For questions or contributions, please reach out via the [GitHub repository](htt
 <br>
 
 #### Group members
-- Yakoubi Oumayma : oumayma.yakoubi@etu.univ-lyon1.fr
-- Ridouan Aafaf : aafaf.ridouan@etu.univ-lyon1.fr
-- Liroulet Inès : ines.liroulet@etu.univ-lyon1.fr
+- Yakoubi Oumayma: oumayma.yakoubi@etu.univ-lyon1.fr
+- Ridouan Aafaf: aafaf.ridouan@etu.univ-lyon1.fr
+- Liroulet Inès: ines.liroulet@etu.univ-lyon1.fr
