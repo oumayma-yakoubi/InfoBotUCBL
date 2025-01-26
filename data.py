@@ -53,7 +53,7 @@ def load_documents():
     all_docs += docs
 
   # Load certif data
-  loader = CSVLoader(file_path="/content/drive/MyDrive/LLM-project-piste-2/final-v1/certifications.csv")
+  loader = CSVLoader(file_path="certifications.csv")
   certif_docs = loader.load()
 
   return all_docs, certif_docs
