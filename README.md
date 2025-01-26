@@ -1,4 +1,4 @@
-# InfoBot UCBL - README
+# InfoBot UCBL
 
 <div align="center">
   <img src="img/Interface.png"">
