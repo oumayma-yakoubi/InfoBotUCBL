@@ -5,12 +5,10 @@ from langchain_community.vectorstores import Chroma
 from langchain.docstore.document import Document
 from langchain.text_splitter import MarkdownTextSplitter
 from langchain_core.prompts import ChatPromptTemplate
-from bs4 import BeautifulSoup, SoupStrainer
+from bs4 import BeautifulSoup
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.document_loaders.csv_loader import CSVLoader
-from langchain_experimental.text_splitter import SemanticChunker
 from langchain_groq import ChatGroq
-import json
 import re
 import os
 
@@ -20,7 +18,7 @@ def bs4_extractor(html: str) -> str:
     soup = BeautifulSoup(html, "lxml")
     return re.sub(r"\+", " ", soup.text).strip()
 
-# This function loads data and returns all_docs , ue_docs, certif_docs
+# This function loads data and returns all_docs, certif_docs
 def load_documents():
   load_dep = RecursiveUrlLoader("https://fst-informatique.univ-lyon1.fr/departement", max_depth=2, extractor=bs4_extractor,)
   load_formation = RecursiveUrlLoader("https://fst-informatique.univ-lyon1.fr/formation", max_depth=2, extractor=bs4_extractor,)
@@ -58,10 +56,12 @@ def load_documents():
   loader = CSVLoader(file_path="/content/drive/MyDrive/LLM-project-piste-2/final-v1/certifications.csv")
   certif_docs = loader.load()
 
-  return all_docs , certif_docs
+  return all_docs, certif_docs
 
 # This function returns 2 questions related to the general idea of the chunk
 def get_supplement(chunk, llm):
+
+  # Define the template for generating questions based on the given text.
   template = """À partir du contenu du texte donné, génère uniquement deux questions générales en français qui couvrent la majorité du sens du texte. 
   Fournis uniquement les deux questions sans aucun texte supplémentaire. La réponse doit être impérativement en français. 
   La réponse doit respecter ce format:
@@ -69,43 +69,62 @@ def get_supplement(chunk, llm):
   <question2>
   Texte : {text}
   """
+  # Create a prompt template from the defined template.
   prompt = ChatPromptTemplate.from_template(template)
+
+  # Format the prompt with the given 'chunk' of text.
   prompt_with_context = prompt.format(text=chunk)
+
+  # Invoke the LLM to generate the response based on the prompt.
   supplement = llm.invoke(prompt_with_context).content
 
+  # Return the generated questions (supplement) from the LLM response.
   return supplement
 
-# This function takes a list of documents as an input and transform it to a markdown format, split it and then add the supplement questions for each chunk. It returns the list of all augmented chunks for all documents.
+# This function takes a list of documents as input and transforms each document into markdown format.
+# It splits each document into smaller chunks, then appends supplement questions to each chunk 
+# before returning the list of all augmented chunks.
 def get_docs_chunks(docs, llm, embedding_function):
 
   markdown_content = ""
   doc_chunks = []
 
+  # Iterate over each document in the input list of documents
   for doc in docs: 
+    # Convert the page content of the document to markdown format and strip extra spaces
     markdown_content = markdownify(doc.page_content).strip()
     text_splitter = MarkdownTextSplitter(embedding_function, breakpoint_threshold_type="interquartile")
+    # Split the markdown content into chunks
     chunks = text_splitter.split_text(markdown_content)
 
+    # Iterate over each chunk generated from the document
     for i, chunk in enumerate(chunks):
       augmented_chunk = get_supplement(chunk, llm) + "\n" + chunk
+
+      # Create a new Document object with the augmented chunk and metadata from the original document
       doc_ = Document(page_content=augmented_chunk, metadata=doc.metadata)
       doc_chunks.append(doc_)
-
+  
+  # Return the list of all augmented document chunks
   return doc_chunks
     
 
 # Fonction pour enregistrer dans une base Chroma
 def save_to_chroma(llm, embedding_function):
-
+    
+    # Load all documents and certification-related documents using the load_documents function
     all_docs, certif_docs = load_documents()
+
+    # Process the documents to split them into chunks and augment each chunk with questions
     all_docs_chunks = get_docs_chunks(all_docs, llm)
 
-  # # Vector store for all websites
+    # Define the path for saving the Chroma vector store for all websites
     CHROMA_DB_PATH = "/content/drive/MyDrive/LLM-project-piste-2/final-v1/chroma_db"
     
+    # Create and persist the Chroma vector store for all documents using the provided embedding function
     db_all = Chroma.from_documents(all_docs_chunks, embedding_function, persist_directory=CHROMA_DB_PATH)
   
-    # Vector store for formations websites
+    # Define the path for certification Vector Store
     CHROMA_CERTIF_PATH = "/content/drive/MyDrive/LLM-project-piste-2/final-v1/chroma_certif"
     db_certif = Chroma.from_documents(certif_docs, embedding_function, persist_directory=CHROMA_CERTIF_PATH)
   
@@ -121,11 +140,8 @@ def main():
 
     embedding_function = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")
 
-    # # Sauvegarder dans Chroma
     save_to_chroma(llm_chunk, embedding_function)
     
-    # print("Documents chargés et indexés avec succès dans Chroma.")
-
 if __name__ == "__main__":
     main()
 
