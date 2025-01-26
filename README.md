@@ -86,5 +86,3 @@ For questions or contributions, please reach out via the [GitHub repository](htt
 - Yakoubi Oumayma : oumayma.yakoubi@etu.univ-lyon1.fr
 - Ridouan Aafaf : aafaf.ridouan@etu.univ-lyon1.fr
 - Liroulet Inès : ines.liroulet@etu.univ-lyon1.fr
-
-#### This is a submission for CC3 of the LLM unit taught by [Dr. Bruno YUN](https://bruno-yun.notion.site/) at Claude Bernard Lyon 1 University.
